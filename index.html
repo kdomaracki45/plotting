@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plot the Point</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #canvas { border: 1px solid #333; background: #fafafa; }
+    #controls { margin-top: 10px; }
+    #result { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Plot the Point</h2>
+  <p style="max-width: 500px;">Drag the blue point to the intersection that matches the given coordinates. Click the check button to see if you are correct.</p>
+  <canvas id="canvas" width="440" height="440"></canvas>
+  <div id="controls">
+    <span id="target"></span>
+    <button id="checkBtn">Check</button>
+  </div>
+  <div id="result"></div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const size = 400;
+    const margin = 20;
+    const step = size / 20;
+    const origin = { x: margin + size/2, y: margin + size/2 };
+    let point = { x: 0, y: 0 };
+    let dragging = false;
+    let target = {
+      x: Math.floor(Math.random() * 21) - 10,
+      y: Math.floor(Math.random() * 21) - 10
+    };
+    document.getElementById('target').textContent = `Place the point at (${target.x}, ${target.y})`;
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#bbb';
+      ctx.lineWidth = 1;
+      // Draw grid lines and labels
+      for (let i = -10; i <= 10; i++) {
+        // Vertical lines
+        ctx.beginPath();
+        ctx.moveTo(origin.x + i * step, margin);
+        ctx.lineTo(origin.x + i * step, margin + size);
+        ctx.stroke();
+        // Label x (smaller font)
+        ctx.fillStyle = '#333';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(i, origin.x + i * step, origin.y + 10);
+        // Horizontal lines
+        ctx.beginPath();
+        ctx.moveTo(margin, origin.y - i * step);
+        ctx.lineTo(margin + size, origin.y - i * step);
+        ctx.stroke();
+        // Label y (smaller font)
+        ctx.textAlign = 'right';
+        ctx.fillText(i, origin.x - 8, origin.y - i * step + 3);
+      }
+      // Draw axes
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      // x-axis
+      ctx.beginPath();
+      ctx.moveTo(margin, origin.y);
+      ctx.lineTo(margin + size, origin.y);
+      ctx.stroke();
+      // y-axis
+      ctx.beginPath();
+      ctx.moveTo(origin.x, margin);
+      ctx.lineTo(origin.x, margin + size);
+      ctx.stroke();
+      // Axis labels OUTSIDE graph
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('x', margin + size + 18, origin.y + 5);
+      ctx.textAlign = 'right';
+      ctx.fillText('y', origin.x - 5, margin - 8);
+    }
+
+    function drawPoint() {
+      // Draw movable point
+      ctx.beginPath();
+      ctx.arc(origin.x + point.x * step, origin.y - point.y * step, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = '#007bff';
+      ctx.fill();
+      ctx.strokeStyle = '#333';
+      ctx.stroke();
+    }
+
+    function render() {
+      drawGrid();
+      drawPoint();
+    }
+
+    render();
+
+    // Mouse events for dragging
+    canvas.addEventListener('mousedown', function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const px = origin.x + point.x * step;
+      const py = origin.y - point.y * step;
+      if (Math.hypot(mx - px, my - py) < 15) {
+        dragging = true;
+      }
+    });
+    canvas.addEventListener('mouseup', function() { dragging = false; });
+    canvas.addEventListener('mouseleave', function() { dragging = false; });
+    canvas.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      // Snap to nearest integer intersection
+      let x = Math.round((mx - origin.x) / step);
+      let y = Math.round((origin.y - my) / step);
+      x = Math.max(-10, Math.min(10, x));
+      y = Math.max(-10, Math.min(10, y));
+      point = { x, y };
+      render();
+    });
+
+    document.getElementById('checkBtn').onclick = function() {
+      if (point.x === target.x && point.y === target.y) {
+        document.getElementById('result').textContent = 'Correct!';
+        // Generate new target point
+        setTimeout(() => {
+          target = {
+            x: Math.floor(Math.random() * 21) - 10,
+            y: Math.floor(Math.random() * 21) - 10
+          };
+          document.getElementById('target').textContent = `Place the point at (${target.x}, ${target.y})`;
+          document.getElementById('result').textContent = '';
+          // Optionally reset the movable point to origin
+          point = { x: 0, y: 0 };
+          render();
+        }, 1000);
+      } else {
+        document.getElementById('result').textContent = `Incorrect. You placed it at (${point.x}, ${point.y})`;
+      }
+    };
+  </script>
+</body>
+</html>
